@@ -1,93 +1,98 @@
-@@ -1,3 +1,93 @@
-@@ -1,3 +1,95 @@
-'''Implement your solution in this file.
-Make sure that you decompose your solution into appropriate 
-functions and that you include appropriate documentation.'''
-functions and that you include appropriate documentation.'''
-functions and that you include appropriate documentation.'''
-import random
+mport random
 import string
+
+# Load words from file
 def load_words():
-    # Load words from the words.txt file
     try:
-        with open("words.txt", "r") as file:
-            word_list = file.read().split()
-        return word_list
+        with open('words.txt', 'r') as file:
+            words = file.readlines()
+        return [word.strip() for word in words]
     except FileNotFoundError:
-        print("Error: 'words.txt' file not found.")
-        return []
-def choose_word(word_list):
-    return random.choice(word_list) if word_list else ""
+        print("The words.txt file was not found.")
+        exit()
+
+# Display the current state of the guessed word
+def display_word(secret_word, guessed_letters):
+    return ''.join([letter if letter in guessed_letters else '-' for letter in secret_word])
+
+# Check if the guess is valid (a single letter and not already guessed)
+def is_valid_guess(guess, guessed_letters):
+    return len(guess) == 1 and guess.isalpha() and guess not in guessed_letters
+
+# Main game function
 def hangman():
-    word_list = load_words()
-    
-    if not word_list:
-        return  # Exit the game if no words are available
-    
-    secret_word = choose_word(word_list).lower()
+    # Load words from the words.txt file
+    words = load_words()
+
+    # Select a random word
+    secret_word = random.choice(words).lower()
+    guessed_letters = set()
+    remaining_guesses = 10
+    warnings = 3
+    vowels = "aeiou"
     unique_letters = set(secret_word)
-    
-    guesses_remaining = 10
-    warnings_remaining = 3
-    letters_guessed = set()
-    vowels = {'a', 'e', 'i', 'o', 'u'}
-    
+
     print("Welcome to Hangman!")
-    print(f"I am thinking of a word that is {len(secret_word)} letters long.")
-    
-    while guesses_remaining > 0:
-        print("-" * 20)
-        print(f"Guesses remaining: {guesses_remaining}")
-        print(f"Warnings remaining: {warnings_remaining}")
-        print("Letters not yet guessed:", ''.join(sorted(set(string.ascii_lowercase) - letters_guessed)))
-        
-        # Display the current guessed word
-        guessed_word = ''.join([char if char in letters_guessed else '-' for char in secret_word])
-        print(f"Current word: {guessed_word}")
-        
-        # Check if the word has been guessed
-        if unique_letters <= letters_guessed:
-            print(f"Congratulations, you guessed the word: {secret_word}!")
-            score = guesses_remaining * len(unique_letters)
-            print(f"Your score is: {score}")
-            return
-        
-        # Get user's guess
+    print("I have selected a word. It has", len(secret_word), "letters.")
+
+    while remaining_guesses > 0:
+        print("\n--- New Round ---")
+        print("Guessed word:", display_word(secret_word, guessed_letters))
+        print(f"Guesses remaining: {remaining_guesses}")
+        print(f"Warnings remaining: {warnings}")
+        print("Letters not guessed yet:", "".join([letter for letter in string.ascii_lowercase if letter not in guessed_letters]))
+
+        # Take user input
         guess = input("Please guess a letter: ").lower()
-        
-        # Handle invalid input
-        if not guess.isalpha() or len(guess) != 1:
-            if warnings_remaining > 0:
-                warnings_remaining -= 1
-                print(f"Invalid input! You have {warnings_remaining} warnings left.")
+
+        # Check for valid input
+        if not is_valid_guess(guess, guessed_letters):
+            if not guess.isalpha():
+                if warnings > 0:
+                    warnings -= 1
+                    print(f"Invalid input! You have {warnings} warnings left.")
+                else:
+                    remaining_guesses -= 1
+                    print("Invalid input! You lose a guess!")
             else:
-                guesses_remaining -= 1
-                print(f"Invalid input! You lost a guess. Guesses remaining: {guesses_remaining}")
+                print(f"You already guessed the letter {guess}.")
+                if warnings > 0:
+                    warnings -= 1
+                    print(f"You lose a warning! You have {warnings} warnings left.")
+                else:
+                    remaining_guesses -= 1
+                    print("You lose a guess!")
             continue
-        
-        # Handle already guessed letters
-        if guess in letters_guessed:
-            if warnings_remaining > 0:
-                warnings_remaining -= 1
-                print(f"You've already guessed that letter! Warnings left: {warnings_remaining}")
-            else:
-                guesses_remaining -= 1
-                print(f"You've already guessed that letter! Guesses remaining: {guesses_remaining}")
-            continue
-        
-        # Add guess to the set of guessed letters
-        letters_guessed.add(guess)
-        
-        # Check if the guess is in the secret word
+
+        # Add the guess to the guessed letters set
+        guessed_letters.add(guess)
+
+        # Check if the guessed letter is in the secret word
         if guess in secret_word:
-            print(f"Good guess: {guessed_word}")
+            print(f"Good guess: {guess} is in the word!")
         else:
             if guess in vowels:
-                guesses_remaining -= 2
-                print(f"The letter '{guess}' is not in the word. You lost 2 guesses.")
+                remaining_guesses -= 2
+                print(f"Sorry, {guess} is not in the word. You lose 2 guesses!")
             else:
-                guesses_remaining -= 1
-                print(f"The letter '{guess}' is not in the word. You lost 1 guess.")
+                remaining_guesses -= 1
+                print(f"Sorry, {guess} is not in the word. You lose 1 guess!")
+
+        # Check if the user has guessed the word
+        if set(secret_word).issubset(guessed_letters):
+            print(f"Congratulations, you've guessed the word: {secret_word}")
+            score = remaining_guesses * len(unique_letters)
+            print(f"Your score is: {score}")
+            break
+
+    # If the user runs out of guesses
+    if remaining_guesses == 0:
+        print(f"You've run out of guesses. The word was: {secret_word}")
+        print("Game Over!")
+
+# Start the game
+if _name_ == "_main_":
+    hangman()
         
     # If the loop ends, the player has run out of guesses
     print(f"Sorry, you've run out of guesses. The word was: {secret_word}. Better luck next time!")
